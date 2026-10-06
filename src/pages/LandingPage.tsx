@@ -105,16 +105,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, language }
                     e.currentTarget.style.display = 'none';
                   }}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-6 text-white">
-                  <div className="text-xs uppercase tracking-wider text-[#A7F3D0] font-bold mb-1">
-                    Thanjavur Delta Region
-                  </div>
-                  <h3 className="font-display font-bold text-lg text-white">
-                    "I just want to know: am I eligible for drip irrigation, and which paper is missing?"
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent flex flex-col justify-end p-6 text-white">
+                  <h3 className="font-display font-bold text-base sm:text-lg text-white leading-snug">
+                    {isTa
+                      ? '“சொட்டுநீர்ப் பாசனத்திற்கு நான் தகுதியானவனா, எந்த ஆவணம் விடுபட்டுள்ளது என்பதை மட்டும் நான் தெரிந்துகொள்ள வேண்டும்.”'
+                      : '“I just want to know: am I eligible for drip irrigation, and which paper is missing?”'}
                   </h3>
-                  <p className="text-xs text-[#E2E8F0] mt-1">
-                    — Ravi Kumar, 2.4 acres paddy farmer
-                  </p>
                 </div>
               </div>
             </div>
@@ -127,14 +123,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, language }
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-14">
             <span className="text-xs uppercase tracking-wider font-bold text-[#1B4D2E]">
-              Core Transformation
+              {isTa ? 'அடிப்படைக் கட்டமைப்பு மாற்றம்' : 'Core Transformation'}
             </span>
             <h2 className="font-display font-extrabold text-3xl sm:text-4xl text-[#111827] mt-2">
-              From Fragmented Portals to a Personalized Action Pathway
+              {isTa
+                ? 'பிரிந்து கிடக்கும் இணையதளங்களிலிருந்து தனிப்பயனாக்கப்பட்ட செயல் பாதைக்கு'
+                : 'From Fragmented Portals to a Personalized Action Pathway'}
             </h2>
             <p className="text-sm sm:text-base text-[#4B5563] mt-3">
-              Don’t force farmers to navigate bureaucratic jargon across 14 different department portals.
-              Let them describe their problem, and let Valam engineer the pathway.
+              {isTa
+                ? '14 வெவ்வேறு துறை இணையதளங்களில் சிக்கலான சொற்களைத் தேட விவசாயிகளை வற்புறுத்தாதீர்கள். உங்கள் பிரச்சனையை கூறுங்கள், வளம் செயல் பாதையை அமைக்கும்.'
+                : 'Don’t force farmers to navigate bureaucratic jargon across 14 different department portals. Let them describe their problem, and let Valam engineer the pathway.'}
             </p>
           </div>
 
@@ -147,17 +146,19 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, language }
                   <AlertTriangle className="w-5 h-5" />
                 </div>
                 <span className="text-xs uppercase font-bold text-[#C2410C] tracking-wider">
-                  The Status Quo
+                  {isTa ? 'தற்போதைய நிலை' : 'The Status Quo'}
                 </span>
                 <h3 className="font-display font-bold text-lg text-[#111827] mt-1 mb-2">
-                  Fragmented Information
+                  {isTa ? 'சிதறிய தகவல்கள்' : 'Fragmented Information'}
                 </h3>
                 <p className="text-xs sm:text-sm text-[#6B7280] leading-relaxed">
-                  Subsidies exist for drip, insurance, and solar pumps, but eligibility circulars are buried in PDFs with technical land ceilings and unstated document dependencies.
+                  {isTa
+                    ? 'நுண்ணீர் பாசனம், பயிர்க் காப்பீடு மற்றும் சோலார் பம்புகளுக்கு அரசு மானியங்கள் உள்ளன, ஆனால் தகுதி விதிகள் சிக்கலான பிடிஎப் கோப்புகளில் புதைந்துள்ளன.'
+                    : 'Subsidies exist for drip, insurance, and solar pumps, but eligibility circulars are buried in PDFs with technical land ceilings and unstated document dependencies.'}
                 </p>
               </div>
               <div className="mt-6 pt-4 border-t border-[#FED7AA]/40 text-xs font-semibold text-[#9A3412]">
-                Result: 42% eligible farmers miss deadlines
+                {isTa ? 'விளைவு: 42% தகுதியான விவசாயிகள் தவறவிடுகிறார்கள்' : 'Result: 42% eligible farmers miss deadlines'}
               </div>
             </div>
 
@@ -168,17 +169,19 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, language }
                   <Compass className="w-5 h-5" />
                 </div>
                 <span className="text-xs uppercase font-bold text-[#166534] tracking-wider">
-                  Valam Engine
+                  {isTa ? 'வளம் விதிமுறை இயந்திரம்' : 'Valam Engine'}
                 </span>
                 <h3 className="font-display font-bold text-lg text-[#111827] mt-1 mb-2">
-                  Understand → Match → Prepare
+                  {isTa ? 'புரிந்துகொள்ளுதல் → பொருத்துதல் → தயார்படுத்துதல்' : 'Understand → Match → Prepare'}
                 </h3>
                 <p className="text-xs sm:text-sm text-[#4B5563] leading-relaxed">
-                  Converts simple speech into structured criteria. Evaluates land size, notified crop, and location against deterministic rules. Pinpoints the exact missing document.
+                  {isTa
+                    ? 'எளிய குரல் அல்லது எழுத்தை அரசு விதிகளுடன் ஒப்பிட்டு, நில அளவு, பயிர் மற்றும் விடுபட்ட ஆவணங்களை துல்லியமாக சுட்டிக்காட்டுகிறது.'
+                    : 'Converts simple speech into structured criteria. Evaluates land size, notified crop, and location against deterministic rules. Pinpoints the exact missing document.'}
                 </p>
               </div>
               <div className="mt-6 pt-4 border-t border-[#BBF7D0] text-xs font-bold text-[#166534]">
-                100% Explainable & Rule-Audited
+                {isTa ? '100% வெளிப்படையான விதிமுறை ஆய்வு' : '100% Explainable & Rule-Audited'}
               </div>
             </div>
 
@@ -189,17 +192,19 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onNavigate, language }
                   <CheckCircle2 className="w-5 h-5" />
                 </div>
                 <span className="text-xs uppercase font-bold text-[#15803D] tracking-wider">
-                  The Outcome
+                  {isTa ? 'இறுதி பலன்' : 'The Outcome'}
                 </span>
                 <h3 className="font-display font-bold text-lg text-[#111827] mt-1 mb-2">
-                  Personalized Pathway
+                  {isTa ? 'தனிப்பயனாக்கப்பட்ட செயல் பாதை' : 'Personalized Pathway'}
                 </h3>
                 <p className="text-xs sm:text-sm text-[#4B5563] leading-relaxed">
-                  A 6-step roadmap with exact contacts: from where to get the missing Bank Passbook seal to the Village AAO inspection and direct benefit transfer.
+                  {isTa
+                    ? 'வங்கி முத்திரை பெறுவது முதல் கிராம வேளாண் அலுவலர் ஆய்வு மற்றும் நேரடி வங்கி மானியம் வரை 6 படிகள் கொண்ட தெளிவான வரைபடம்.'
+                    : 'A 6-step roadmap with exact contacts: from where to get the missing Bank Passbook seal to the Village AAO inspection and direct benefit transfer.'}
                 </p>
               </div>
               <div className="mt-6 pt-4 border-t border-[#86EFAC]/60 text-xs font-bold text-[#15803D]">
-                Result: From confusion to actionable claim
+                {isTa ? 'விளைவு: குழப்பத்திலிருந்து நேரடி பயன்' : 'Result: From confusion to actionable claim'}
               </div>
             </div>
           </div>

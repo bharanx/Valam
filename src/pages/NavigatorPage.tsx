@@ -119,16 +119,20 @@ export const NavigatorPage: React.FC<NavigatorPageProps> = ({
 
   // Handle Natural Language Submission
   const handleQuerySubmit = async (textToProcess?: string) => {
-    const text = textToProcess || queryText;
-    if (!text.trim()) return;
+    const text = (textToProcess || queryText || '').trim() || (isTa ? 'சொட்டுநீர் பாசன மானியம் வேண்டும்' : 'I need drip irrigation subsidy');
+    if (!queryText && !textToProcess) {
+      setQueryText(text);
+    }
 
     setIsProcessing(true);
-    setActivePathway(null);
 
     try {
       const detection = await api.detectNeed(text);
       setDetectedNeed(detection);
       setSelectedCategory(detection.detectedCategory);
+
+      const effectiveCrop = detection.extractedCrop || cropOverride || activeFarmer.crop;
+      const effectiveLand = detection.extractedLandSize || landOverride || activeFarmer.landSizeAcres;
 
       if (detection.extractedCrop) {
         setCropOverride(detection.extractedCrop);
@@ -148,16 +152,25 @@ export const NavigatorPage: React.FC<NavigatorPageProps> = ({
         // Evaluate eligibility with effective farmer profile
         const effectiveFarmer: FarmerProfile = {
           ...activeFarmer,
-          crop: detection.extractedCrop || cropOverride,
-          landSizeAcres: detection.extractedLandSize || landOverride,
+          crop: effectiveCrop,
+          landSizeAcres: effectiveLand,
           irrigationType: irrigationOverride
         };
 
         const res = await api.checkEligibility(effectiveFarmer.id, topProg.id);
         setEligibilityResult(res);
+
+        // Immediately generate pathway so "Find My Path" creates the complete pathway
+        const pathway = await api.generatePathway(effectiveFarmer.id, topProg.id);
+        setActivePathway(pathway);
+
+        // Scroll smoothly to results
+        setTimeout(() => {
+          document.getElementById('results-section')?.scrollIntoView({ behavior: 'smooth' });
+        }, 150);
       }
     } catch (e) {
-      console.error(e);
+      console.error('Error in handleQuerySubmit:', e);
     } finally {
       setIsProcessing(false);
     }
@@ -173,7 +186,6 @@ export const NavigatorPage: React.FC<NavigatorPageProps> = ({
   // Re-evaluate when overrides or selected program change
   const handleReevaluate = async (prog: SupportProgram) => {
     setSelectedProgram(prog);
-    setActivePathway(null);
     setIsProcessing(true);
 
     try {
@@ -186,6 +198,11 @@ export const NavigatorPage: React.FC<NavigatorPageProps> = ({
 
       const res = await api.checkEligibility(effectiveFarmer.id, prog.id);
       setEligibilityResult(res);
+
+      const pathway = await api.generatePathway(effectiveFarmer.id, prog.id);
+      setActivePathway(pathway);
+    } catch (e) {
+      console.error('Error in handleReevaluate:', e);
     } finally {
       setIsProcessing(false);
     }
@@ -193,7 +210,7 @@ export const NavigatorPage: React.FC<NavigatorPageProps> = ({
 
   // Generate Personalized Pathway
   const handleGeneratePathway = async () => {
-    if (!selectedProgram || !eligibilityResult) return;
+    if (!selectedProgram) return;
     setIsProcessing(true);
 
     try {
@@ -227,48 +244,26 @@ export const NavigatorPage: React.FC<NavigatorPageProps> = ({
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
-      {/* 1. Header Banner & Farmer Bar */}
-      <div className="bg-white p-6 rounded-2xl border border-[#E5E7EB] shadow-xs">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#EAF5EC] text-[#1B4D2E] text-xs font-semibold mb-2">
-              <Compass className="w-3.5 h-3.5" />
-              <span>{isTa ? 'அறிவார்ந்த தேவை கண்டறிதல்' : 'Intelligent Need Navigator'}</span>
-            </div>
-            <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-[#111827]">
-              {isTa ? 'உங்கள் தேவையை கூறுங்கள். வளம் வழியமைக்கும்.' : 'Describe your problem. Valam finds the path.'}
-            </h1>
-            <p className="text-xs sm:text-sm text-[#6B7280] mt-1">
-              {isTa
-                ? 'அரசு துறை பெயர்களை தேட வேண்டாம். உங்கள் எளிய விவசாய தேவையை உள்ளிடவும்.'
-                : 'No bureaucratic terminology required. Speak in your own words, and we extract intent and eligibility.'}
-            </p>
-          </div>
-
-          {/* Active Farmer Quick Lockup */}
-          <div className="flex items-center gap-3 p-3 rounded-xl bg-[#F9FAFB] border border-[#E5E7EB] shrink-0">
-            <div className="w-9 h-9 rounded-full bg-[#1B4D2E]/10 text-[#1B4D2E] flex items-center justify-center font-bold text-xs">
-              {activeFarmer.name.slice(0, 2).toUpperCase()}
-            </div>
-            <div className="text-xs">
-              <div className="font-bold text-[#111827]">{activeFarmer.name}</div>
-              <div className="text-[#6B7280] flex items-center gap-1">
-                <MapPin className="w-3 h-3" />
-                {activeFarmer.district} · {activeFarmer.landSizeAcres} ac ({activeFarmer.crop})
-              </div>
-            </div>
-            <button
-              onClick={onOpenFarmerModal}
-              className="px-2.5 py-1 text-[11px] font-semibold text-[#1B4D2E] hover:bg-[#EAF5EC] rounded-md transition-colors"
-            >
-              {isTa ? 'மாற்று' : 'Switch'}
-            </button>
-          </div>
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-12">
+      {/* 1. Header & Search Area */}
+      <div className="text-center space-y-6">
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#EAF5EC] text-[#1B4D2E] text-xs font-bold uppercase tracking-wider">
+          <Compass className="w-3.5 h-3.5" />
+          <span>{isTa ? 'அறிவார்ந்த தேவை கண்டறிதல்' : 'Intelligent Need Navigator'}</span>
         </div>
+        
+        <h1 className="font-display font-extrabold text-3xl sm:text-4xl lg:text-5xl text-[#111827] tracking-tight">
+          {isTa ? 'உங்கள் தேவையை கூறுங்கள். வளம் வழியமைக்கும்.' : 'Describe your problem. Valam finds the path.'}
+        </h1>
+        
+        <p className="text-base sm:text-lg text-[#6B7280] max-w-2xl mx-auto">
+          {isTa
+            ? 'அரசு துறை பெயர்களை தேட வேண்டாம். உங்கள் எளிய விவசாய தேவையை உங்கள் சொந்த வார்த்தைகளில் உள்ளிடவும்.'
+            : 'No bureaucratic terminology required. Describe your need in your own words.'}
+        </p>
 
-        {/* 2. Natural Language Input Bar */}
-        <div className="mt-6">
+        {/* Input Area */}
+        <div className="max-w-2xl mx-auto mt-8">
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -283,114 +278,80 @@ export const NavigatorPage: React.FC<NavigatorPageProps> = ({
                 onChange={(e) => setQueryText(e.target.value)}
                 placeholder={
                   isTa
-                    ? 'எ.கா: "எனக்கு பாசன உதவி வேண்டும்" அல்லது "பயிர் சேதமானது"'
-                    : 'e.g., "I need irrigation support for my rice field" or "My crop was damaged by flood"'
+                    ? 'உங்கள் பிரச்சனையை விவரிக்கவும்...'
+                    : 'Describe your problem...'
                 }
-                className="w-full px-4 py-3.5 pr-10 text-sm text-[#111827] bg-[#FBFBFA] border border-[#D1D5DB] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1B4D2E] focus:border-transparent transition-all shadow-inner"
+                className="w-full px-5 py-4 pr-10 text-base text-[#111827] bg-white border border-[#D1D5DB] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1B4D2E] focus:border-transparent transition-all shadow-sm"
               />
               {queryText && (
                 <button
                   type="button"
                   onClick={() => setQueryText('')}
-                  className="absolute right-3 top-3.5 text-xs text-[#9CA3AF] hover:text-[#4B5563]"
+                  className="absolute right-4 top-4 text-gray-400 hover:text-gray-600"
                 >
                   ✕
                 </button>
               )}
             </div>
-
+            
             <button
               type="submit"
-              disabled={isProcessing || !queryText.trim()}
-              className="px-6 py-3.5 text-xs font-bold text-white bg-[#1B4D2E] hover:bg-[#143B23] disabled:opacity-50 disabled:cursor-not-allowed rounded-xl transition-all flex items-center justify-center gap-2 shadow-xs shrink-0 cursor-pointer"
+              disabled={isProcessing}
+              className="px-8 py-4 font-bold text-white bg-[#1B4D2E] hover:bg-[#143B23] disabled:opacity-50 cursor-pointer rounded-xl transition-all shadow-sm shrink-0 flex items-center justify-center gap-2"
             >
               {isProcessing ? (
                 <span>{isTa ? 'கணக்கிடுகிறது...' : 'Evaluating...'}</span>
               ) : (
-                <>
-                  <span>{isTa ? 'வழிகாட்டுக' : 'Find My Path'}</span>
-                  <Send className="w-4 h-4" />
-                </>
+                <span>{isTa ? 'வழிகாட்டுக' : 'Find My Path'}</span>
               )}
             </button>
           </form>
 
-          {/* Natural language helper prompts */}
-          <div className="flex flex-wrap items-center gap-2 mt-3 text-xs text-[#6B7280]">
-            <span className="font-medium text-[#4B5563] flex items-center gap-1">
-              <Sparkles className="w-3.5 h-3.5 text-[#10B981]" />
-              {isTa ? 'மாதிரி தேவைகள்:' : 'Quick voice / query prompts:'}
-            </span>
-            <button
-              type="button"
-              onClick={() => {
-                setQueryText('I need irrigation support for my rice crop');
-                handleQuerySubmit('I need irrigation support for my rice crop');
-              }}
-              className="hover:text-[#1B4D2E] hover:underline"
-            >
-              "I need irrigation support"
-            </button>
-            <span>·</span>
-            <button
-              type="button"
-              onClick={() => {
-                setQueryText('My crop was damaged by heavy unseasonal rain');
-                handleQuerySubmit('My crop was damaged by heavy unseasonal rain');
-              }}
-              className="hover:text-[#1B4D2E] hover:underline"
-            >
-              "My crop was damaged"
-            </button>
-            <span>·</span>
-            <button
-              type="button"
-              onClick={() => {
-                setQueryText('எனக்கு பாசன உதவி வேண்டும்');
-                handleQuerySubmit('எனக்கு பாசன உதவி வேண்டும்');
-              }}
-              className="hover:text-[#1B4D2E] hover:underline font-medium text-[#1B4D2E]"
-            >
-              "எனக்கு பாசன உதவி வேண்டும்"
-            </button>
-          </div>
-        </div>
-
-        {/* 3. Visual Need Category Tiles */}
-        <div className="mt-8 pt-6 border-t border-[#E5E7EB]">
-          <div className="text-xs font-bold uppercase tracking-wider text-[#6B7280] mb-3">
-            {isTa ? 'அல்லது உங்கள் தேவையை நேரடியாக தேர்வு செய்யவும்:' : 'Or Select What You Need Help With:'}
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-            {CATEGORIES.map((cat) => {
-              const isSelected = selectedCategory === cat.id;
-              return (
-                <button
-                  key={cat.id}
-                  onClick={() => handleCategorySelect(cat.id, cat.sampleQuery)}
-                  className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
-                    isSelected
-                      ? 'border-[#1B4D2E] bg-[#EAF5EC] ring-2 ring-[#1B4D2E]/20'
-                      : 'border-[#E5E7EB] bg-white hover:border-[#9CA3AF] hover:bg-[#F9FAFB]'
-                  }`}
-                >
-                  <div className="mb-2">{cat.icon}</div>
-                  <div>
-                    <h4 className="font-semibold text-xs text-[#111827] leading-tight mb-0.5">
-                      {cat.title}
-                    </h4>
-                    <p className="text-[11px] text-[#6B7280] line-clamp-1">{cat.desc}</p>
-                  </div>
-                </button>
-              );
-            })}
+          {/* Voice / Helper row */}
+          <div className="flex items-center justify-center gap-2 mt-4 text-sm text-[#6B7280]">
+            <span role="img" aria-label="microphone">🎙️</span>
+            <span>{isTa ? 'உங்கள் பிரச்சனையை பேசவும் அல்லது தட்டச்சு செய்யவும்' : 'Speak or type your problem'}</span>
           </div>
         </div>
       </div>
 
-      {/* 4. NLP Intent Extraction & Follow-Up Answers Card (if detected) */}
+      {/* 2. Visual Need Category Tiles */}
+      <div className="pt-8 border-t border-[#E5E7EB]">
+        <h2 className="text-center text-xs font-bold uppercase tracking-widest text-[#6B7280] mb-8">
+          {isTa ? 'அல்லது உங்கள் தேவையை நேரடியாக தேர்வு செய்யவும்' : 'OR SELECT WHAT YOU NEED HELP WITH'}
+        </h2>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {CATEGORIES.map((cat) => {
+            const isSelected = selectedCategory === cat.id;
+            return (
+              <button
+                key={cat.id}
+                onClick={() => handleCategorySelect(cat.id, cat.sampleQuery)}
+                className={`p-5 rounded-xl border text-left transition-all flex flex-col items-center text-center h-full cursor-pointer ${
+                  isSelected
+                    ? 'border-[#1B4D2E] bg-[#EAF5EC] shadow-sm'
+                    : 'border-[#E5E7EB] bg-white hover:border-[#9CA3AF] hover:bg-gray-50'
+                }`}
+              >
+                <div className="mb-3 p-3 rounded-full bg-gray-50 border border-gray-100">
+                  {cat.icon}
+                </div>
+                <h4 className="font-semibold text-sm text-[#111827] mb-1">
+                  {cat.title}
+                </h4>
+                <p className="text-xs text-[#6B7280] leading-relaxed">
+                  {cat.desc}
+                </p>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 3. NLP Intent Extraction & Follow-Up Answers Card (if detected) */}
       {detectedNeed && (
-        <div className="bg-[#F8FAF9] p-5 rounded-2xl border border-[#D7E3D9] text-xs">
+        <div id="results-section" className="bg-[#F8FAF9] p-5 rounded-2xl border border-[#D7E3D9] text-xs scroll-mt-20">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-[#D7E3D9]">
             <div className="flex items-center gap-2">
               <span className="font-bold text-[#14381E] text-sm">

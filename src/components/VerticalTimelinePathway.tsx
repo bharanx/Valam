@@ -11,6 +11,8 @@ import {
   UserCheck
 } from 'lucide-react';
 import { FarmerProfile, Language, PersonalizedPathway } from '../types';
+import { SUPPORT_PROGRAMS } from '../data/mockData';
+import { PrintableFarmerDocket } from './PrintableFarmerDocket';
 
 interface VerticalTimelinePathwayProps {
   pathway: PersonalizedPathway;
@@ -265,6 +267,13 @@ export const VerticalTimelinePathway: React.FC<VerticalTimelinePathwayProps> = (
           {isTa ? 'இலவச உதவி' : 'Toll-Free 1800-VALAM'}
         </span>
       </div>
+
+      {/* High-Contrast Printout for Farmer to Hand to Official / Bank */}
+      <PrintableFarmerDocket
+        farmer={farmer}
+        program={SUPPORT_PROGRAMS.find((p) => p.id === pathway.programId) || null}
+        language={language}
+      />
     </div>
   );
 };

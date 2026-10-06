@@ -17,6 +17,7 @@ import {
 import { DEMO_FARMERS, SUPPORT_PROGRAMS } from '../data/mockData';
 import { checkEligibility } from '../services/eligibilityEngine';
 import { generatePersonalizedPathway } from '../services/pathwayEngine';
+import { PrintableFarmerDocket } from '../components/PrintableFarmerDocket';
 import { FarmerProfile, Language, SupportProgram } from '../types';
 
 interface AssistedModePageProps {
@@ -386,6 +387,14 @@ export const AssistedModePage: React.FC<AssistedModePageProps> = ({ language, on
                   </div>
                 </div>
               </div>
+
+              {/* Dedicated High-Contrast Print Page */}
+              <PrintableFarmerDocket
+                farmer={generatedDocket.farmer}
+                program={generatedDocket.program}
+                operatorDetails={generatedDocket.operator}
+                language={language}
+              />
             </div>
           )}
         </div>
